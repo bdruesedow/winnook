@@ -10,7 +10,8 @@ const EYE_H = 10;
 const GAP = 5;
 const LEFT = CX - GAP / 2 - EYE_W / 2;
 const RIGHT = CX + GAP / 2 + EYE_W / 2;
-const BEAT = 60 / 115;
+// Glow lives on the svg itself so the moving wrapper only composites a cached texture.
+const NEON = 'drop-shadow(0 0 3px rgb(var(--accent) / 0.75))';
 
 const centered = { transformBox: 'fill-box', transformOrigin: 'center' } as const;
 
@@ -73,8 +74,7 @@ function CallHeadsetOverlay({ color, mic }: { color: string; mic: boolean }) {
         cy={tipY}
         r={1}
         fill={led}
-        animate={mic ? { opacity: [1, 0.35, 1], scale: [1, 1.4, 1] } : { opacity: 1, scale: 1 }}
-        transition={mic ? { duration: 1.2, repeat: Infinity } : { duration: 0.2 }}
+        className={mic ? 'buddy-led' : undefined}
         style={centered}
       />
     </motion.g>
@@ -86,24 +86,17 @@ function Particles({ kind }: { kind: 'zzz' | 'note' }) {
   return (
     <>
       {items.map((ch, i) => (
-        <motion.text
+        <text
           key={`${kind}${i}`}
+          className={kind === 'zzz' ? 'buddy-zzz' : 'buddy-note'}
           x={kind === 'zzz' ? CX + 9 + i * 3 : RIGHT + 7}
           y={kind === 'zzz' ? 7 : 4}
           fontSize={kind === 'zzz' ? 5 + i * 1.5 : 6}
           fill="white"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: [0, 0.9, 0], y: [8, -6], x: kind === 'note' ? [0, 3] : [0, 2] }}
-          transition={{
-            duration: kind === 'zzz' ? 2.4 : 2.2,
-            repeat: Infinity,
-            delay: i * 0.8,
-            repeatDelay: kind === 'note' ? 3 : 0,
-            ease: 'easeOut',
-          }}
+          style={{ animationDelay: `${i * 0.8}s` }}
         >
           {ch}
-        </motion.text>
+        </text>
       ))}
     </>
   );
@@ -162,30 +155,16 @@ function bodyAnimation(v: BuddyView) {
       ? { animate: { y: [0, 2, 0, 2, 0] }, transition: { duration: 0.7, ease: 'easeInOut' as const } }
       : { animate: { y: 0 }, transition: { duration: 0.2 } };
   }
-  if (v.state !== 'JAMMING' || v.silly === 'glance') return { animate: {}, transition: {} };
-  if (v.jam === 'HEADBANG') {
-    return {
-      animate: { y: [-3, 5, -3], scaleY: [1.1, 0.8, 1.1], scaleX: [0.92, 1.12, 0.92] },
-      transition: { duration: 0.22, repeat: Infinity, ease: 'easeInOut' as const },
-    };
-  }
-  if (v.jam === 'DANCE') {
-    return {
-      animate: { x: [-3, 3, -3], rotate: [-10, 10, -10] },
-      transition: { duration: BEAT * 2, repeat: Infinity, ease: 'easeInOut' as const },
-    };
-  }
-  if (v.jam === 'VIBE_CHECK') {
-    return {
-      animate: { y: [0, 3, 0, 3, 0] },
-      transition: { duration: BEAT * 2, repeat: Infinity, ease: 'easeInOut' as const },
-    };
-  }
-  // GROOVE: gentle sine bounce on the beat
-  return {
-    animate: { y: [0, -1.5, 0] },
-    transition: { duration: BEAT, repeat: Infinity, ease: 'easeInOut' as const },
-  };
+  // Looping groove states run as CSS keyframes (compositor) instead of per-frame JS.
+  return { animate: {}, transition: {} };
+}
+
+function bodyClass(v: BuddyView) {
+  if (v.state !== 'JAMMING' || v.silly === 'glance') return undefined;
+  if (v.jam === 'HEADBANG') return 'buddy-headbang';
+  if (v.jam === 'DANCE') return 'buddy-dance';
+  if (v.jam === 'VIBE_CHECK') return 'buddy-vibe';
+  return 'buddy-groove';
 }
 
 export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: string }) {
@@ -273,7 +252,8 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
       style={{ height: H, filter: glow }}
       aria-hidden
     >
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} overflow="visible">
+      <div className={['flex', bodyClass(view)].filter(Boolean).join(' ')}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} overflow="visible" style={{ filter: NEON }}>
         <motion.g initial={false} animate={body.animate} transition={body.transition} style={centered}>
           {view.headset ? (
             <CallHeadsetOverlay color={accent} mic={view.micActive} />
@@ -286,6 +266,7 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
         {sleeping && <Particles kind="zzz" />}
         {view.notes && view.headphones && <Particles kind="note" />}
       </svg>
+      </div>
     </motion.div>
   );
 }

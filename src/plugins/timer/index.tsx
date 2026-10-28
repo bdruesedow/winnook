@@ -124,7 +124,7 @@ function Indicator() {
   const { seconds, state } = useRemainingSeconds();
   if (!state.running && !state.ringing) return null;
   return (
-    <span className={`flex items-center gap-1 text-[11px] tabular-nums text-accent ${state.ringing ? 'animate-pulse' : ''}`}>
+    <span className={`flex items-center gap-1 text-[11px] tabular-nums text-accent ${state.ringing ? 'nook-pulse' : ''}`}>
       <TimerIcon size={13} />
       {state.running ? formatClock(seconds) : '0:00'}
     </span>

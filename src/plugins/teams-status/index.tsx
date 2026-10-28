@@ -18,7 +18,7 @@ function Indicator({ ctx }: { ctx: PluginContext }) {
       className="relative flex h-5 w-5 items-center justify-center"
     >
       <MessageSquare size={14} style={{ color: TEAMS_PURPLE }} fill={TEAMS_PURPLE} fillOpacity={0.25} />
-      <span className="absolute -right-1 -top-1 flex h-3 min-w-3 animate-pulse items-center justify-center rounded-full bg-red-500 px-[3px] text-[8px] font-bold leading-none text-white">
+      <span className="absolute -right-1 -top-1 flex h-3 min-w-3 nook-pulse items-center justify-center rounded-full bg-red-500 px-[3px] text-[8px] font-bold leading-none text-white">
         {unreadCount > 9 ? '9+' : unreadCount}
       </span>
     </button>

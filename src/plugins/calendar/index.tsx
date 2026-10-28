@@ -44,7 +44,7 @@ function Indicator({ events, onFire }: { events: CalEvent[]; onFire: () => void 
   }, [events, today, hhmm, onFire]);
 
   if (Date.now() >= a.until) return null;
-  return <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-accent" title={`Now: ${a.title}`} />;
+  return <span className="h-2.5 w-2.5 nook-pulse rounded-full bg-accent" title={`Now: ${a.title}`} />;
 }
 
 export default definePlugin({
@@ -159,7 +159,7 @@ export default definePlugin({
               {selDate.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}
             </span>
             {bannerActive && (
-              <span className="animate-pulse rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">
+              <span className="nook-pulse rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-white">
                 Now: {a.title}
               </span>
             )}

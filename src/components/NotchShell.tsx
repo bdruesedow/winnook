@@ -182,14 +182,14 @@ export function NotchShell() {
           )}
           style={{ borderRadius: 'inherit' }}
           initial={false}
-          animate={{ opacity: collapsed ? 0 : 1 }}
+          animate={collapsed ? { opacity: 0, transitionEnd: { visibility: 'hidden' } } : { opacity: 1, visibility: 'visible' }}
           transition={{ duration: 0.18 }}
         />
 
         {/* Kept mounted so pill indicators of background plugins keep their state while expanded. */}
         <motion.div
           initial={false}
-          animate={{ opacity: collapsed ? 1 : 0 }}
+          animate={collapsed ? { opacity: 1, visibility: 'visible' } : { opacity: 0, transitionEnd: { visibility: 'hidden' } }}
           transition={{ duration: 0.15 }}
           style={{ pointerEvents: collapsed ? 'auto' : 'none' }}
         >

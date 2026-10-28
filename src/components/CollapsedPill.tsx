@@ -47,7 +47,7 @@ export function CollapsedPill({ onWidth }: Props) {
             <span
               key={`${p.plugin.manifest.id}:${p.instanceId}`}
               className="flex items-center"
-              style={{ filter: NEON }}
+              style={{ filter: p.plugin.manifest.id === 'nook-buddy' ? undefined : NEON }}
             >
               <PluginRender plugin={p.plugin} ctx={p.ctx} kind="renderPillIndicator" />
             </span>
