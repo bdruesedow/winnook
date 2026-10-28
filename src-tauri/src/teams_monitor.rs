@@ -149,6 +149,7 @@ pub fn start(app: AppHandle) {
                 .is_some_and(|s| s == UserNotificationListenerAccessStatus::Allowed);
             let mut last: Option<TeamsStatus> = None;
             let mut call_streak = 0u8;
+            let mut first_read = true;
 
             loop {
                 if allowed {
@@ -156,12 +157,14 @@ pub fn start(app: AppHandle) {
                         let foreground = teams_in_foreground();
                         with_shared(|s| {
                             s.current = ids;
-                            if foreground {
+                            // Toasts already in the Action Center at startup are old news.
+                            if foreground || first_read {
                                 s.seen = s.current.clone();
                             }
                             s.seen.retain(|id| s.current.contains(id));
                             s.status.unread_count = s.current.difference(&s.seen).count() as u32;
                         });
+                        first_read = false;
                     }
                 }
 
