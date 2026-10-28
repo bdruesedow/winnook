@@ -34,7 +34,7 @@ export interface Settings {
 }
 
 const DEFAULTS: Settings = {
-  theme: 'auto',
+  theme: 'light',
   accent: 'violet',
   customAccent: '#F97316',
   material: 'glass',

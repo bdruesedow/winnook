@@ -39,7 +39,7 @@ export default definePlugin({
     const progress = m.duration > 0 ? Math.min(1, m.position / m.duration) : 0;
     const art = m.albumArtBase64 ? `data:${m.albumArtMime ?? 'image/png'};base64,${m.albumArtBase64}` : null;
     return (
-      <div className="flex h-full flex-col p-2.5">
+      <div className={`flex h-full flex-col p-2.5 ${m.isPlaying ? 'nook-tile-active' : ''}`}>
         <div className="flex items-start justify-between">
           <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-black/10 dark:bg-white/10">
             {art ? <img src={art} alt="" className="h-full w-full object-cover" /> : <Music size={20} className="text-accent" />}

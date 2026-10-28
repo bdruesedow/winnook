@@ -46,7 +46,7 @@ function Tile() {
   useNow(s.active && s.endAt ? 15_000 : 60_000);
   const label = s.active && s.endAt ? timeLeft(s.endAt) : MODES[s.mode].label;
   return (
-    <div className="flex h-full items-center gap-2.5 px-3">
+    <div className={`flex h-full items-center gap-2.5 px-3 ${s.active ? 'nook-tile-active' : ''}`}>
       <CoffeeIcon size={22} className={s.active ? 'text-accent' : 'text-zinc-700 dark:text-zinc-200'} />
       <div className="min-w-0 flex-1 leading-tight">
         <div className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-100">Coffee</div>

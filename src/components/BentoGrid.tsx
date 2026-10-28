@@ -28,7 +28,7 @@ import { SPRING, cn } from './ui';
 const SWIPE_THRESHOLD = 40;
 const GAP = 10; // matches gap-2.5
 
-const CELL = 'rounded-2xl bg-black/[0.06] dark:bg-white/[0.07]';
+const CELL = 'nook-tile rounded-2xl';
 
 function Empty({ className }: { className?: string }) {
   return (
