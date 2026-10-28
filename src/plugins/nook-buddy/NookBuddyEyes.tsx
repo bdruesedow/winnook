@@ -171,7 +171,7 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
   const { state, jam, silly } = view;
   const jamming = state === 'JAMMING' && silly !== 'glance';
   const rock = jamming && view.accentEyes === 'rock';
-  const happy = !view.headset && (view.dodge === 'happy' || view.dodge === 'bye');
+  const happy = !view.headset && (view.dodge === 'happy' || view.dodge === 'bye' || (!!view.reaction && view.reaction !== 'nap'));
   const arc = happy || (jamming && view.accentEyes === 'arc');
   const closed = jamming && view.accentEyes === 'closed';
   const bang = jamming && jam === 'HEADBANG';
@@ -185,11 +185,16 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
   const body = bodyAnimation(view);
   const glow = view.caffeinated ? `drop-shadow(0 0 3px ${accent})` : undefined;
 
+  const needy = view.need !== null && (state === 'IDLE' || state === 'TRACKING');
+  const needScaleY = !needy ? 1 : view.need === 'energy' ? 0.4 : view.need === 'fun' ? 0.6 : view.need === 'love' ? 0.8 : 0.85;
+  const eyeTilt = needy && view.need === 'love' ? 1 : 0;
+
   const eyeTarget = {
     x: view.look.x,
     y: view.look.y,
+    rotate: 0,
     scaleX: (yawn ? 1.2 : 1) * view.scale,
-    scaleY: (sleeping ? 0.15 : yawn ? 0.25 : focused ? 0.8 : blinkNow ? 0.1 : 1) * view.scale,
+    scaleY: (sleeping ? 0.15 : yawn ? 0.25 : focused ? 0.8 : blinkNow ? 0.1 : needScaleY) * view.scale,
   };
 
   const eyes = [LEFT, RIGHT].map((cx, i) => {
@@ -237,7 +242,7 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
         rx={EYE_W / 2}
         fill="white"
         initial={false}
-        animate={eyeTarget}
+        animate={{ ...eyeTarget, rotate: eyeTilt * (i === 0 ? -14 : 14) }}
         transition={{ type: 'spring', stiffness: 380, damping: 26, mass: 0.6 }}
         style={centered}
       />
@@ -264,6 +269,21 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
           {eyes}
           {pong && <Pong />}
         </motion.g>
+        {needy && view.need === 'hunger' && (
+          <g className="buddy-thought">
+            <circle cx={RIGHT + 8} cy={4} r={2.6} fill="#d6a56b" />
+            <circle cx={RIGHT + 7.2} cy={3.4} r={0.45} fill="#5b3a1a" />
+            <circle cx={RIGHT + 9} cy={4.6} r={0.45} fill="#5b3a1a" />
+          </g>
+        )}
+        {needy && view.need === 'love' && (
+          <path className="buddy-sweat" d={`M${LEFT - 2} ${CY + 3} q-1.6 2.4 0 3.4 q1.6 -1 0 -3.4z`} fill="#7dd3fc" />
+        )}
+        {view.reaction && view.reaction !== 'nap' && (
+          <text className="buddy-heart" x={RIGHT + 6} y={6} fontSize={7} fill="#f472b6">
+            {view.reaction === 'played' ? '★' : '♥'}
+          </text>
+        )}
         {sleeping && <Particles kind="zzz" />}
         {view.dodge === 'scared' && (
           <path

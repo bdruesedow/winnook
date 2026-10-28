@@ -163,6 +163,21 @@ input {
   30% { opacity: 1; }
   100% { opacity: 0; transform: translateY(6px); }
 }
+.buddy-thought {
+  animation: buddy-thought 2.4s steps(8) infinite;
+}
+.buddy-heart {
+  animation: buddy-heart 1.1s steps(8) infinite;
+}
+@keyframes buddy-thought {
+  0%, 100% { opacity: 0; }
+  25%, 75% { opacity: 1; }
+}
+@keyframes buddy-heart {
+  0% { opacity: 0; transform: translateY(4px); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-4px); }
+}
 @keyframes buddy-zzz {
   0% { opacity: 0; transform: translate(0, 8px); }
   50% { opacity: 0.9; }

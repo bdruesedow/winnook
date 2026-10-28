@@ -2,6 +2,7 @@ import { definePlugin } from '@winnook/sdk';
 import type { PluginContext } from '@winnook/sdk';
 import { useShellStore } from '../../store/useShellStore';
 import { useDodgeStore } from '../../store/useDodgeStore';
+import { pet, worstNeed } from '../nook-pet/petStore';
 import { useSettingsStore } from '../../store/useSettingsStore';
 import { coffee } from '../coffee';
 import { NookBuddyEyes } from './NookBuddyEyes';
@@ -16,6 +17,8 @@ function Buddy({ ctx }: { ctx: PluginContext }) {
   const teams = ctx.system.teams.useTeamsStatus();
   const expanded = useShellStore((s) => s.view.kind !== 'collapsed');
   const dodge = useDodgeStore((s) => s.mood);
+  const petState = pet.use();
+  const need = petState.active ? worstNeed(petState) : null;
   const view = useBuddyBrain({
     mode,
     cursor,
@@ -24,6 +27,8 @@ function Buddy({ ctx }: { ctx: PluginContext }) {
     call: { isInCall: teams.isInCall, isMicActive: teams.isMicActive },
     interacting: expanded,
     dodge,
+    need,
+    reaction: petState.active ? petState.reaction : null,
   });
   if (mode === 'off') return null;
   return <NookBuddyEyes view={view} accent={accent} />;
