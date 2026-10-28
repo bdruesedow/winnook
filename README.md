@@ -9,6 +9,9 @@ A tiny pill at the top of your screen that blooms into a bento grid of plugins w
 ![Tauri](https://img.shields.io/badge/Tauri-v2-FFC131?logo=tauri&logoColor=black)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Vibe coded](https://img.shields.io/badge/vibe--coded-100%25-ff69b4)
+
+> 🤖 **100% vibe-coded.** Every line was written by AI (GitHub Copilot) while I steered with prompts. Expect rough edges and use at your own risk.
 
 ![Collapsed pill](docs/notch-pill.png)
 
