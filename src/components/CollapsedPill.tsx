@@ -6,6 +6,7 @@ import { PluginRender } from './PluginRender';
 export const PILL_MIN_WIDTH = 110;
 export const PILL_MAX_WIDTH = 180;
 export const PILL_HEIGHT = 32;
+const NEON_SOFT = 'drop-shadow(0 0 2px rgb(var(--accent) / 0.45))';
 
 // Neon glow in the accent color, only used on the collapsed pill.
 const NEON = 'drop-shadow(0 0 3px rgb(var(--accent) / 0.9)) drop-shadow(0 0 7px rgb(var(--accent) / 0.45))';
@@ -42,14 +43,15 @@ export function CollapsedPill({ onWidth }: Props) {
         style={{ height: PILL_HEIGHT }}
       >
         <span className="text-[13px] font-medium tabular-nums" style={{ filter: NEON }}>{time}</span>
-        <div className="flex items-center gap-1.5 empty:hidden" style={{ filter: NEON }}>
+        <div className="flex items-center gap-1.5 empty:hidden">
           {indicators.map((p) => (
-            <PluginRender
+            <span
               key={`${p.plugin.manifest.id}:${p.instanceId}`}
-              plugin={p.plugin}
-              ctx={p.ctx}
-              kind="renderPillIndicator"
-            />
+              className="flex items-center"
+              style={{ filter: p.plugin.manifest.id === 'nook-buddy' ? NEON_SOFT : NEON }}
+            >
+              <PluginRender plugin={p.plugin} ctx={p.ctx} kind="renderPillIndicator" />
+            </span>
           ))}
         </div>
       </div>
