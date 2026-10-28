@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+}
+
+:root {
+  --accent: 124 58 237;
+}
+
+@keyframes nook-bar {
+  from {
+    height: 3px;
+  }
+  to {
+    height: 16px;
+  }
+}
+
+textarea,
+input {
+  user-select: text;
+}
+
+.nook-glass {
+  background-color: rgb(255 255 255 / var(--glass-alpha, 0.92));
+}
+.dark .nook-glass {
+  background-color: rgb(24 24 27 / var(--glass-alpha, 0.92));
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(127, 127, 127, 0.4);
+  border-radius: 3px;
+}

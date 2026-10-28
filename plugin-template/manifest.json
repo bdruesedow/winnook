@@ -1,0 +1,10 @@
+{
+  "id": "hello-world",
+  "name": "Hello World",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "description": "Example plugin: a click counter tile",
+  "slot": "tile-small",
+  "defaultOrder": 100,
+  "permissions": ["storage"]
+}
