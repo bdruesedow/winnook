@@ -4,6 +4,10 @@ A Dynamic Island / notch for Windows. A small pill at the top of your screen tha
 
 Built with Tauri v2 (Rust), React, TypeScript, Tailwind and Framer Motion. Every feature is a plugin on top of `@winnook/sdk`.
 
+![Collapsed pill](docs/notch-pill.png)
+
+![Expanded notch](docs/notch-expanded.png)
+
 ## Features
 
 - Collapsed pill with live indicators, expands on hover
