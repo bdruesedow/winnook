@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CursorTracking, MediaSession } from '../../sdk/types';
 import type { NookBuddyMode } from '../../store/useSettingsStore';
+import type { DodgeMood } from '../../store/useDodgeStore';
 
 export type BuddyState = 'IDLE' | 'TRACKING' | 'DIZZY' | 'STARTLED' | 'BORED' | 'SLEEPING' | 'JAMMING' | 'IN_CALL';
 export type JamMode = 'GROOVE' | 'VIBE_CHECK' | 'HEADBANG' | 'DANCE';
@@ -8,6 +9,8 @@ export type AccentEyes = 'arc' | 'closed' | 'rock' | null;
 export type Silly = 'yawn' | 'sideEye' | 'pong' | 'glance' | null;
 
 export interface BuddyView {
+  /** The pill is dodging the mouse (scared), returned (happy) or leaving (bye). */
+  dodge: DodgeMood;
   state: BuddyState;
   jam: JamMode;
   /** Short-lived alternative eye shape; null = normal capsule eyes. */
@@ -45,6 +48,7 @@ interface Params {
   call: { isInCall: boolean; isMicActive: boolean };
   /** True while the notch is expanded (user interaction). */
   interacting: boolean;
+  dodge: DodgeMood;
 }
 
 /** setTimeout helper whose timers are cleared on unmount. */
@@ -63,7 +67,7 @@ function useLater() {
   }).current;
 }
 
-export function useBuddyBrain({ mode, cursor, media, caffeinated, call, interacting }: Params): BuddyView {
+export function useBuddyBrain({ mode, cursor, media, caffeinated, call, interacting, dodge }: Params): BuddyView {
   const playful = mode === 'playful';
   const inCall = call.isInCall && mode !== 'off';
   const [nodding, setNodding] = useState(false);
@@ -320,6 +324,7 @@ export function useBuddyBrain({ mode, cursor, media, caffeinated, call, interact
   /* ---- compose ---- */
   let state: BuddyState = 'IDLE';
   if (inCall) state = 'IN_CALL';
+  else if (!inCall && dodge !== 'none') state = 'STARTLED';
   else if (dizzy) state = 'DIZZY';
   else if (startled) state = 'STARTLED';
   else if (silly === 'glance') state = 'JAMMING';
@@ -339,8 +344,11 @@ export function useBuddyBrain({ mode, cursor, media, caffeinated, call, interact
   }
   if (state === 'SLEEPING' || state === 'DIZZY') look = { x: 0, y: 0 };
   if (state === 'IN_CALL') look = { x: callLook, y: 0 };
+  if (!inCall && dodge === 'scared') look = { x: cursor.normX * 4, y: 0 };
+  if (!inCall && dodge === 'bye') look = { x: 0, y: -1 };
 
   return {
+    dodge: inCall ? 'none' : dodge,
     state,
     jam,
     accentEyes,
@@ -353,7 +361,7 @@ export function useBuddyBrain({ mode, cursor, media, caffeinated, call, interact
     nodding,
     relief,
     caffeinated,
-    scale: (startled ? 1.35 : 1) * (caffeinated ? 1.15 : 1),
+    scale: (startled || (!inCall && dodge === 'scared') ? 1.35 : 1) * (caffeinated ? 1.15 : 1),
     notes: music && jam === 'GROOVE',
   };
 }

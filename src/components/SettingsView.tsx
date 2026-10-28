@@ -127,6 +127,18 @@ export function SettingsView() {
               ]}
             />
           </Row>
+          <Row label="Dodge key">
+            <Segmented
+              value={s.dodgeKey}
+              onChange={set('dodgeKey')}
+              options={[
+                { value: 'off', label: 'Off' },
+                { value: 'shift', label: 'Shift' },
+                { value: 'ctrl', label: 'Ctrl' },
+                { value: 'alt', label: 'Alt' },
+              ]}
+            />
+          </Row>
         </section>
       </div>
 

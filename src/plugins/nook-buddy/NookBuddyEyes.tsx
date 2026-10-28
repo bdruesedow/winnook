@@ -171,7 +171,8 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
   const { state, jam, silly } = view;
   const jamming = state === 'JAMMING' && silly !== 'glance';
   const rock = jamming && view.accentEyes === 'rock';
-  const arc = jamming && view.accentEyes === 'arc';
+  const happy = !view.headset && (view.dodge === 'happy' || view.dodge === 'bye');
+  const arc = happy || (jamming && view.accentEyes === 'arc');
   const closed = jamming && view.accentEyes === 'closed';
   const bang = jamming && jam === 'HEADBANG';
   const sleeping = state === 'SLEEPING';
@@ -264,6 +265,13 @@ export function NookBuddyEyes({ view, accent }: { view: BuddyView; accent: strin
           {pong && <Pong />}
         </motion.g>
         {sleeping && <Particles kind="zzz" />}
+        {view.dodge === 'scared' && (
+          <path
+            className="buddy-sweat"
+            d={`M${RIGHT + 7} 2 q-2 3 0 4.2 q2 -1.2 0 -4.2z`}
+            fill="#7dd3fc"
+          />
+        )}
         {view.notes && view.headphones && <Particles kind="note" />}
       </svg>
       </div>

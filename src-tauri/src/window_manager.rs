@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
@@ -7,6 +8,7 @@ use tauri::{
     AppHandle, Emitter, Manager, Monitor, PhysicalPosition, PhysicalSize, WebviewWindow,
 };
 use windows::Win32::Foundation::POINT;
+use windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
 use windows::Win32::UI::WindowsAndMessaging::{
     GetCursorPos, SetWindowDisplayAffinity, WDA_EXCLUDEFROMCAPTURE,
 };
@@ -19,6 +21,7 @@ pub const NOTCH_HEIGHT: f64 = 380.0;
 const SIDE_MARGIN: f64 = 24.0;
 const POLL_INTERVAL: Duration = Duration::from_millis(25);
 const FOLLOW_CHECK_EVERY: u32 = 4;
+static DODGE_VK: AtomicI32 = AtomicI32::new(0x10);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -204,14 +207,23 @@ pub fn start_cursor_poller(app: AppHandle) {
             let mut last_pos: Option<(i32, i32)> = None;
             let mut last_emit = std::time::Instant::now();
             let mut last_move = std::time::Instant::now();
+            let mut dodging = false;
             loop {
                 thread::sleep(POLL_INTERVAL);
                 tick = tick.wrapping_add(1);
                 let Some((cx, cy)) = cursor_pos() else { continue };
                 let state = app.state::<WindowState>();
 
+                let key = dodge_key_down();
+                let dodge_changed = key != dodging;
+                if dodge_changed {
+                    dodging = key;
+                    last_emit = std::time::Instant::now() - Duration::from_millis(100);
+                    let _ = app.emit_to(NOTCH_LABEL, "notch://dodge", key);
+                }
+
                 // Lightweight cursor stream (~30 FPS, only while moving), relative to the notch window.
-                if last_pos != Some((cx, cy)) {
+                if last_pos != Some((cx, cy)) || dodge_changed {
                     let now = std::time::Instant::now();
                     let dt = now.duration_since(last_emit);
                     if dt >= Duration::from_millis(33) {
@@ -363,6 +375,23 @@ pub fn set_notch_position(app: AppHandle, position: NotchPosition) -> Result<(),
 pub fn set_monitor_mode(app: AppHandle, mode: MonitorMode) -> Result<(), String> {
     lock(&app.state::<WindowState>()).monitor_mode = mode;
     apply_position(&app)
+}
+
+/// Sets the modifier key that makes the pill dodge the cursor ("off", "shift", "ctrl", "alt").
+#[tauri::command]
+pub fn set_dodge_key(key: String) {
+    let vk = match key.as_str() {
+        "shift" => 0x10,
+        "ctrl" => 0x11,
+        "alt" => 0x12,
+        _ => 0,
+    };
+    DODGE_VK.store(vk, Ordering::Relaxed);
+}
+
+fn dodge_key_down() -> bool {
+    let vk = DODGE_VK.load(Ordering::Relaxed);
+    vk != 0 && unsafe { GetAsyncKeyState(vk) } < 0
 }
 
 #[tauri::command]

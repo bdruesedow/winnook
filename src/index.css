@@ -155,6 +155,14 @@ input {
   animation-name: buddy-note;
   animation-duration: 5.2s;
 }
+.buddy-sweat {
+  animation: buddy-sweat 0.9s steps(6) infinite;
+}
+@keyframes buddy-sweat {
+  0% { opacity: 0; transform: translateY(-2px); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(6px); }
+}
 @keyframes buddy-zzz {
   0% { opacity: 0; transform: translate(0, 8px); }
   50% { opacity: 0.9; }

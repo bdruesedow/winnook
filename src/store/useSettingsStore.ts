@@ -10,6 +10,7 @@ export type Position = 'left' | 'center' | 'right';
 export type MonitorMode = 'primary' | 'follow';
 export type HoverDelay = 'fast' | 'normal' | 'calm';
 
+export type DodgeKey = 'off' | 'shift' | 'ctrl' | 'alt';
 export type NookBuddyMode = 'off' | 'subtle' | 'playful';
 
 export const HOVER_DELAY_MS: Record<HoverDelay, number> = { fast: 50, normal: 180, calm: 400 };
@@ -26,6 +27,8 @@ export interface Settings {
   monitor: MonitorMode;
   hoverDelay: HoverDelay;
   nookBuddy: NookBuddyMode;
+  /** Hold this key and the pill makes room for the mouse. */
+  dodgeKey: DodgeKey;
   alwaysOnTop: boolean;
   launchAtStartup: boolean;
   keepStatusActive: boolean;
@@ -43,6 +46,7 @@ const DEFAULTS: Settings = {
   monitor: 'primary',
   hoverDelay: 'normal',
   nookBuddy: 'playful',
+  dodgeKey: 'shift',
   alwaysOnTop: true,
   launchAtStartup: false,
   keepStatusActive: true,
@@ -82,6 +86,9 @@ async function applyEffect<K extends keyof Settings>(key: K, value: Settings[K])
     case 'monitor':
       await invoke('set_monitor_mode', { mode: value });
       break;
+    case 'dodgeKey':
+      await invoke('set_dodge_key', { key: value });
+      break;
     case 'alwaysOnTop':
       await invoke('set_always_on_top', { enabled: value });
       break;
@@ -120,6 +127,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
         applyEffect('position', merged.position),
         applyEffect('monitor', merged.monitor),
         applyEffect('alwaysOnTop', merged.alwaysOnTop),
+        applyEffect('dodgeKey', merged.dodgeKey),
       ]);
     }
   },

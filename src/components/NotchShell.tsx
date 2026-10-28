@@ -1,8 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useSpring, useTransform, useVelocity } from 'framer-motion';
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { subscribeCursor } from '../sdk/cursor';
 import { HOVER_DELAY_MS, useSettingsStore, type Position } from '../store/useSettingsStore';
+import { dodgeTargetX, dodgeTargetY, setMood, togglePeek, useDodgeStore } from '../store/useDodgeStore';
 import { useShellStore } from '../store/useShellStore';
 import { BentoGrid } from './BentoGrid';
 import { CollapsedPill, PILL_HEIGHT, PILL_MAX_WIDTH, PILL_MIN_WIDTH } from './CollapsedPill';
@@ -19,6 +22,11 @@ const PANEL_RADIUS = 24;
 const HIT_PADDING_COLLAPSED = 6;
 const HIT_PADDING_EXPANDED = 12;
 const PROGRAMMATIC_OPEN_TIMEOUT_MS = 10_000;
+const DODGE_RADIUS = 110;
+const DODGE_STICKY_DX = 12;
+const EDGE_MARGIN = 4;
+const PEEK_SHORTCUT = 'Ctrl+Alt+H';
+const HIDE_Y = -(PILL_HEIGHT + TOP_GAP + 36);
 
 const ALIGN: Record<Position, string> = {
   left: 'justify-start',
@@ -57,13 +65,93 @@ export function NotchShell() {
       : FULL;
 
   // Tell Rust which area is interactive; it toggles click-through based on the cursor.
+  const hidden = useDodgeStore((s) => s.hidden);
+  const dodgeKey = useSettingsStore((s) => s.dodgeKey);
+  const keyHeld = useDodgeStore((s) => s.keyHeld);
+  const dodging = collapsed && keyHeld && dodgeKey !== 'off';
   useEffect(() => {
     const pad = collapsed ? HIT_PADDING_COLLAPSED : HIT_PADDING_EXPANDED;
     const x = alignX(position, size.w) - pad;
-    void invoke('set_hit_rect', {
-      rect: { x, y: 0, w: size.w + pad * 2, h: TOP_GAP + size.h + pad },
+    const rect =
+      hidden || dodging
+        ? { x: 0, y: 0, w: 0, h: 0 }
+        : { x, y: 0, w: size.w + pad * 2, h: TOP_GAP + size.h + pad };
+    void invoke('set_hit_rect', { rect });
+  }, [collapsed, position, size.w, size.h, hidden, dodging]);
+
+  // Dodge key state from the Rust poller.
+  useEffect(() => {
+    const unlisten = getCurrentWebviewWindow().listen<boolean>('notch://dodge', (e) =>
+      useDodgeStore.setState({ keyHeld: e.payload }),
+    );
+    return () => void unlisten.then((fn) => fn());
+  }, []);
+
+  // Peek-through hotkey: tuck the pill away for a few seconds.
+  useEffect(() => {
+    void register(PEEK_SHORTCUT, (e) => {
+      if (e.state !== 'Pressed') return;
+      useShellStore.getState().collapse();
+      togglePeek();
+    }).catch((err) => console.error(`[WinNook] shortcut ${PEEK_SHORTCUT}: ${String(err)}`));
+    return () => void unregister(PEEK_SHORTCUT).catch(() => undefined);
+  }, []);
+
+  // Repulsion: while the dodge key is held, the pill slides away from the cursor.
+  const sizeRef = useRef(size);
+  sizeRef.current = size;
+  useEffect(() => {
+    if (!dodging) {
+      dodgeTargetX.set(0);
+      const { mood } = useDodgeStore.getState();
+      if (mood === 'scared') setMood('happy', 1400);
+      return;
+    }
+    let side: 1 | -1 = 1;
+    let lastCx = -1;
+    return subscribeCursor((c) => {
+      const w = sizeRef.current.w;
+      const h = sizeRef.current.h;
+      const pillCx = alignX(position, w) + w / 2;
+      const pillCy = TOP_GAP + h / 2;
+      const dx = c.x - pillCx;
+      const dy = c.y - pillCy;
+      const vertGap = Math.max(Math.abs(dy) - h / 2, 0);
+      if (vertGap >= DODGE_RADIUS) {
+        dodgeTargetX.set(0);
+        if (useDodgeStore.getState().mood === 'scared') setMood('happy', 1400);
+        return;
+      }
+      const hx = w / 2 + Math.sqrt(DODGE_RADIUS ** 2 - vertGap ** 2);
+      if (Math.abs(dx) >= hx) {
+        dodgeTargetX.set(0);
+        if (useDodgeStore.getState().mood === 'scared') setMood('happy', 1400);
+        return;
+      }
+      const minShift = -(pillCx - w / 2 - EDGE_MARGIN);
+      const maxShift = WINDOW_WIDTH - pillCx - w / 2 - EDGE_MARGIN;
+      const left = -(hx - dx);
+      const right = hx + dx;
+      // Cursor almost dead-center: keep the side we already chose, or follow its direction of travel.
+      if (Math.abs(dx) < DODGE_STICKY_DX) side = lastCx >= 0 && c.x !== lastCx ? (c.x > lastCx ? -1 : 1) : side;
+      else side = dx > 0 ? -1 : 1;
+      lastCx = c.x;
+      const preferred = side === -1 ? left : right;
+      const other = side === -1 ? right : left;
+      const fits = (s: number) => s >= minShift && s <= maxShift;
+      const shift = fits(preferred) ? preferred : fits(other) ? other : Math.max(minShift, Math.min(maxShift, preferred));
+      dodgeTargetX.set(shift);
+      if (useDodgeStore.getState().mood !== 'scared') setMood('scared');
     });
-  }, [collapsed, position, size.w, size.h]);
+  }, [dodging, position]);
+
+  useEffect(() => {
+    dodgeTargetY.set(hidden ? HIDE_Y : 0);
+  }, [hidden]);
+
+  const springX = useSpring(dodgeTargetX, { stiffness: 320, damping: 17, mass: 0.8 });
+  const springY = useSpring(dodgeTargetY, { stiffness: 200, damping: 20 });
+  const tilt = useTransform(useVelocity(springX), [-1400, 1400], [-9, 9], { clamp: true });
 
   // Hover handling driven by the Rust cursor poller.
   const cursorInside = useRef(false);
@@ -158,7 +246,7 @@ export function NotchShell() {
     <div className={cn('relative flex h-screen w-screen items-start', ALIGN[position])}>
       <motion.div
         className="relative overflow-hidden text-zinc-900 dark:text-zinc-100"
-        style={{ marginTop: TOP_GAP }}
+        style={{ marginTop: TOP_GAP, x: springX, y: springY, rotate: tilt }}
         initial={false}
         animate={{
           width: size.w,

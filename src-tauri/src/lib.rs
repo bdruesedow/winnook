@@ -39,6 +39,7 @@ pub fn run() {
             teams_monitor::focus_teams_window,
             window_manager::set_notch_position,
             window_manager::set_monitor_mode,
+            window_manager::set_dodge_key,
             window_manager::set_hit_rect,
             window_manager::set_always_on_top,
             window_manager::open_overlay,
