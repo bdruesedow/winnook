@@ -256,7 +256,7 @@ export function NotchShell() {
         transition={SPRING}
       >
         <motion.div
-          className="absolute inset-0 bg-pill"
+          className="absolute inset-0 bg-black"
           initial={false}
           animate={{ opacity: collapsed ? 1 : 0 }}
           transition={{ duration: 0.18 }}
