@@ -139,15 +139,14 @@ fn lock<'a>(state: &'a WindowState) -> std::sync::MutexGuard<'a, Inner> {
     state.inner.lock().unwrap_or_else(|e| e.into_inner())
 }
 
-/// Moves the notch window to the top edge of the target monitor.
-pub fn apply_position(app: &AppHandle) -> Result<(), String> {
+/// Where the notch window should sit right now: (x, y, width, height, scale, monitor origin).
+fn desired_placement(app: &AppHandle) -> Option<(i32, i32, i32, i32, f64, PhysicalPosition<i32>)> {
     let state = app.state::<WindowState>();
     let (position, mode) = {
         let inner = lock(&state);
         (inner.position, inner.monitor_mode)
     };
-    let window = notch_window(app).ok_or("notch window missing")?;
-    let monitor = target_monitor(app, mode).ok_or("no monitor found")?;
+    let monitor = target_monitor(app, mode)?;
 
     let scale = monitor.scale_factor();
     let width = (NOTCH_WIDTH * scale).round() as i32;
@@ -162,6 +161,31 @@ pub fn apply_position(app: &AppHandle) -> Result<(), String> {
         NotchPosition::Right => mon_pos.x + mon_w - width - margin,
     };
     let y = mon_pos.y;
+    Some((x, y, width, height, scale, *mon_pos))
+}
+
+/// True when the monitor layout changed (unplugged/added/resolution) and the notch is misplaced.
+fn placement_stale(app: &AppHandle) -> bool {
+    let Some((x, y, w, h, scale, _)) = desired_placement(app) else { return false };
+    let p = lock(&app.state::<WindowState>()).placement;
+    if p.origin_x != x || p.origin_y != y || (p.scale - scale).abs() > 0.001 {
+        return true;
+    }
+    // Windows may have moved/resized the window itself while monitors were (un)plugged.
+    match notch_window(app).and_then(|win| Some((win.outer_position().ok()?, win.outer_size().ok()?))) {
+        Some((pos, size)) => {
+            pos.x != x || pos.y != y || size.width as i32 != w || size.height as i32 != h
+        }
+        None => false,
+    }
+}
+
+/// Moves the notch window to the top edge of the target monitor.
+pub fn apply_position(app: &AppHandle) -> Result<(), String> {
+    let state = app.state::<WindowState>();
+    let window = notch_window(app).ok_or("notch window missing")?;
+    let (x, y, width, height, scale, mon_pos) =
+        desired_placement(app).ok_or("no monitor found")?;
 
     window
         .set_size(PhysicalSize::new(width as u32, height as u32))
@@ -270,6 +294,12 @@ pub fn start_cursor_poller(app: AppHandle) {
                     )
                 };
                 if overlay_open {
+                    continue;
+                }
+
+                // Monitor hot-plug / resolution change: re-center the notch.
+                if was_click_through && !inside && tick % FOLLOW_CHECK_EVERY == 0 && placement_stale(&app) {
+                    let _ = apply_position(&app);
                     continue;
                 }
 
